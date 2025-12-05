@@ -1,77 +1,65 @@
-# AgentLend 
-🏦 AgentLend – AI-Driven Loan Assistance Platform
+# 🏦 AgentLend — AI-Driven Loan Assistance Platform
 
-AgentLend is a smart Agentic AI lending system that automates end-to-end loan processing for NBFCs.
+AgentLend is a smart Agentic AI lending system that automates end-to-end personal loan processing for NBFCs.  
 It uses a Master Agent and multiple Worker Agents to handle:
 
-Loan conversation
+- 💬 **Loan conversation**  
+- 🪪 **KYC verification**  
+- 📊 **Credit evaluation**  
+- 📈 **EMI visualization**  
+- ⚖️ **Fairness & explainability**  
+- 📄 **Sanction letter generation**
 
-KYC verification
+Built with **FastAPI**, **React**, **LangFlow**, **Groq LLM**, **MongoDB Atlas**, and **MySQL**.
 
-Credit evaluation
+---
 
-EMI visualization
+## 🚀 Tech Stack
 
-Fairness & explainability
+### **Frontend**
+- React  
+- Vite  
+- CSS
 
-Sanction letter generation
+### **Backend**
+- FastAPI  
+- LangFlow  
+- Groq LLM  
+- ReportLab (PDF generation)  
+- python-dotenv
 
-Built with FastAPI, React, LangFlow, Groq LLM, MongoDB Atlas, and MySQL.
+### **Databases**
+- MongoDB Atlas (CRM / KYC)  
+- MySQL (loan + underwriting data)
 
-🚀 Tech Stack
-Frontend
+---
 
-React
+## 🧠 Agent Architecture
 
-Vite
+### **Master Agent**
+Controls the conversation flow and orchestrates worker agents.
 
-Recharts (EMI visualization)
+### **Worker Agents**
+- **Sales Agent** — collects loan details & negotiates terms  
+- **Verification Agent** — checks KYC (MongoDB)  
+- **Underwriting Agent** — evaluates eligibility (MySQL rules)  
+- **Fair Check Agent** — bias detection & explainability  
+- **EMI View Agent** — computes EMI & shows chart  
+- **Loan Guide Agent** — suggests alternate offers  
+- **Sanction Agent** — generates sanction letters (PDF)
 
+---
+
+##  Setup (Quick)
+```bash
 Backend
+cd backend
+python -m venv venv
+venv\Scripts\activate
+pip install -r requirements.txt
+uvicorn main:app --reload
 
-FastAPI
-
-LangFlow (Agent Orchestration)
-
-Groq LLM
-
-JWT Authentication (later)
-
-Databases
-
-MongoDB Atlas (CRM / Customer KYC data)
-
-MySQL (Loan limits, interest rates, underwriting rules)
-
-Other Tools
-
-ReportLab (PDF generation)
-
-Python-dotenv
-
-Uvicorn
-
-🤖 Agent Architecture
-Master Agent
-
-Controls full conversation flow
-
-Calls worker agents based on state
-
-Ensures the complete loan pipeline runs smoothly
-
-Worker Agents
-
-Sales Agent – collects loan details
-
-Verification Agent – checks KYC using MongoDB
-
-Underwriting Agent – evaluates eligibility using MySQL
-
-Fair Check Agent – generates unbiased decision explanations
-
-EMI View Agent – calculates EMI & visualizes
-
-Loan Guide Agent – suggests alternate offers
-
-Sanction Agent – generates sanction letter PDF
+Frontend
+cd frontend
+npm install
+npm run dev
