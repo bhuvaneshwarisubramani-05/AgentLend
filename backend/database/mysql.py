@@ -2,7 +2,7 @@ import mysql.connector
 import os
 from dotenv import load_dotenv
 
-load_dotenv()   # load variables from .env file
+load_dotenv()
 
 def get_connection():
     return mysql.connector.connect(
@@ -11,9 +11,10 @@ def get_connection():
         password=os.getenv("MYSQL_PASSWORD"),
         database=os.getenv("MYSQL_DATABASE")
     )
+
 def get_preapproved_limit(phone):
     conn = get_connection()
-    cursor = conn.cursor()
+    cursor = conn.cursor(dictionary=True)
     query = "SELECT preapproved_amount, credit_score FROM preapproved_limits WHERE phone = %s"
     cursor.execute(query, (phone,))
     result = cursor.fetchone()
@@ -21,13 +22,12 @@ def get_preapproved_limit(phone):
     conn.close()
     return result
 
-
 def get_interest_rate():
     conn = get_connection()
-    cursor = conn.cursor()
+    cursor = conn.cursor(dictionary=True)
     query = "SELECT interest_rate FROM loan_interest_rates WHERE category = 'personal'"
     cursor.execute(query)
-    rate = cursor.fetchone()[0]
+    rate = cursor.fetchone()
     cursor.close()
     conn.close()
-    return rate
+    return rate["interest_rate"]
