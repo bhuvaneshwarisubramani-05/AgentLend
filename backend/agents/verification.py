@@ -1,14 +1,27 @@
-from langchain_openai import ChatOpenAI
+import re
 
-from config import OPENAI_API_KEY
-
-llm = ChatOpenAI(model="gpt-4o-mini", openai_api_key=OPENAI_API_KEY)
-
-def verification_agent(query):
-    prompt = f"""
-    You are a Document Verification Agent.
-    Explain required documents, check if provided details are complete.
-
-    User query: {query}
+# -------------------------------------------------------------
+# Extract Phone Number
+# -------------------------------------------------------------
+def extract_phone(query: str):
     """
-    return llm.invoke(prompt).content
+    Extracts a 10-digit Indian phone number from user message.
+    Returns phone number string or None.
+    """
+
+    # Remove spaces and non-digit formatting
+    cleaned = re.sub(r"[^\d]", "", query)
+
+    # Look for 10-digit number at the end
+    match = re.search(r"(?:\+?91)?(\d{10})$", cleaned)
+    if match:
+        return match.group(1)
+
+    return None
+
+
+# -------------------------------------------------------------
+# Optional - Ask a question
+# -------------------------------------------------------------
+def ask_for_phone():
+    return "Please share your registered 10-digit phone number for KYC verification."

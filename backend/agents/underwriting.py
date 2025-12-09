@@ -1,56 +1,51 @@
-from langchain_openai import ChatOpenAI
-from config import OPENAI_API_KEY
-from database.mysql import get_preapproved_limit # <-- NEW IMPORT
+from database.mysql import get_preapproved_limit
 
-llm = ChatOpenAI(model="gpt-4o-mini", openai_api_key=OPENAI_API_KEY)
+def underwriting_agent(memory: dict):
+    phone = memory.get("phone")
+    requested_amount = memory.get("loan_amount")
 
-def underwriting_agent(data):
-    # Assume the phone number is provided in the memory/data
-    phone_number = data.get("phone", None)
+    if not phone or not requested_amount:
+        return {"status": "error", "reason": "Missing phone or loan amount"}
+
+    # -----------------------------
+    # 1️⃣ Fetch data from MySQL
+    # -----------------------------
+    pre_data = get_preapproved_limit(phone)
+
+    if not pre_data:
+        return {"status": "error", "reason": "No pre-approved data for this customer"}
+
+    # pre_data is a DICTIONARY — so use dict keys:
+    preapproved_amount = int(pre_data["preapproved_amount"])
+    credit_score = int(pre_data["credit_score"])
+
+    # Save to memory
+    memory["preapproved_limit"] = preapproved_amount
+    memory["credit_score"] = credit_score
+
+    # -----------------------------
+    # 2️⃣ Apply underwriting rules
+    # -----------------------------
     
-    # 1. Check for Pre-Approved Limit
-    if phone_number:
-        try:
-            pre_approved_data = get_preapproved_limit(phone_number)
-            if pre_approved_data:
-                # --- Pre-Approved Logic (Data from MySQL) ---
-                approved_amt = pre_approved_data.get("preapproved_amount", 0)
-                credit_score = pre_approved_data.get("credit_score", 0)
-                
-                # Update memory with the final eligible amount from DB
-                data["eligible_amount"] = approved_amt
-                
-                return f"""
-                Eligibility Check (Pre-Approved):
-                Credit Score (from DB): {credit_score}
-                ✅ Approved — Pre-Approved amount: ₹{approved_amt}
-                """
-        except Exception as e:
-            # Fallback if DB connection fails
-            print(f"MySQL DB Error during pre-approval check: {e}") 
+    # Rule 1: Reject for low credit score
+    if credit_score < 700:
+        return {
+            "status": "rejected",
+            "reason": f"Low credit score ({credit_score})"
+        }
 
-    # 2. Manual Logic (Fallback using memory data)
-    # This logic runs if no pre-approved limit is found or if the phone number is missing/invalid.
-    salary = data.get("salary", 0)
-    credit_score = data.get("credit_score", 0)
-    emi = data.get("emi", 0)
-    
-    dbr = (emi / salary) * 100 if salary > 0 else 0
-    
-    result = f"""
-    Eligibility Check (Manual):
-    Salary: ₹{salary}
-    Credit Score: {credit_score}
-    Existing EMI Burden: {dbr:.2f}%
-    """
+    # Rule 2: Auto Approve
+    if requested_amount <= preapproved_amount:
+        memory["eligible_amount"] = requested_amount
+        return {"status": "approved"}
 
-    if credit_score < 650:
-        result += "❌ Rejected: Low credit score."
-    elif dbr > 40:
-        result += "❌ Rejected: Too much EMI burden."
-    else:
-        approved_amt = salary * 20
-        result += f"✅ Approved — Estimated eligible amount: ₹{approved_amt}"
-        data["eligible_amount"] = approved_amt # Update memory
-        
-    return result
+    # Rule 3: Salary Slip Needed
+    if requested_amount <= 2 * preapproved_amount:
+        memory["needs_salary_slip"] = True
+        return {"status": "need_salary"}
+
+    # Rule 4: Reject above 2× limit
+    return {
+        "status": "rejected",
+        "reason": f"Requested ₹{requested_amount} exceeds allowable limit"
+    }

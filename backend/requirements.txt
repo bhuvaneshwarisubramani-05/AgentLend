@@ -1,30 +1,23 @@
+# Backend Framework
 fastapi
 uvicorn
 python-dotenv
 
-# AI + LangChain stack
-langchain
+# LangChain + Agents
 langchain-core
 langchain-openai
 langgraph
-openai
 
-# Optional: LLM providers
+# LLM Providers
 groq
 
-# Data + Utilities
+# Utilities
 pydantic
 requests
 
-# Database (if needed)
+# Databases
 pymongo
-psycopg2-binary
+mysql-connector-python
 
-# File handling / PDF
+# PDF Generation
 reportlab
-pillow
-
-# ASGI
-anyio
-starlette
-sniffio
