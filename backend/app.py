@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse   # <-- ADD THIS
 from pydantic import BaseModel
 from graph.loan_graph import loan_graph
@@ -7,6 +8,14 @@ import os   # <-- ADD THIS
 
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],     # allow frontend access
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 class ChatRequest(BaseModel):
     message: str

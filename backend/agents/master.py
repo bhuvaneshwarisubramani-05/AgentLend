@@ -8,9 +8,9 @@ from agents import emi as emi_agent
 from database.mongo import get_customer_by_phone
 
 
-# ============================================================
-# Unified Response Builder
-# ============================================================
+# =====================================================================
+# Unified JSON Response
+# =====================================================================
 def build_response(text: str, type: str, memory: dict, extra: dict = None):
     response = {
         "text": text,
@@ -22,25 +22,20 @@ def build_response(text: str, type: str, memory: dict, extra: dict = None):
     return response, memory
 
 
-# ============================================================
-# Underwriting Wrapper → Converts dict into unified format
-# ============================================================
+# =====================================================================
+# UNDERWRITING WRAPPER
+# =====================================================================
 def run_underwriting(memory):
-    result = uw_agent.underwriting_agent(memory)
-
-    # Already correct dict:
-    # { "status": "approved" / "need_salary" / "rejected", "reason": ... }
-
-    return result  
+    return uw_agent.underwriting_agent(memory)
 
 
-# ============================================================
-# MASTER AGENT — FINAL RULE-BASED FLOW
-# ============================================================
+# =====================================================================
+# MASTER AGENT (FINAL)
+# =====================================================================
 def master_agent(query: str, memory: dict):
 
     # ------------------------------------------------------------
-    # 1️⃣ LOAN AMOUNT
+    # 1️⃣ GET LOAN AMOUNT
     # ------------------------------------------------------------
     if memory.get("loan_amount") is None:
         amount = sales.extract_loan_amount(query)
@@ -54,7 +49,7 @@ def master_agent(query: str, memory: dict):
                               "ask_loan_amount", memory)
 
     # ------------------------------------------------------------
-    # 2️⃣ TENURE
+    # 2️⃣ GET TENURE
     # ------------------------------------------------------------
     if memory.get("tenure") is None:
         tenure = sales.extract_tenure(query)
@@ -68,7 +63,7 @@ def master_agent(query: str, memory: dict):
                               "ask_tenure", memory)
 
     # ------------------------------------------------------------
-    # 3️⃣ PHONE NUMBER
+    # 3️⃣ GET PHONE NUMBER
     # ------------------------------------------------------------
     if memory.get("phone") is None:
         phone = verification.extract_phone(query)
@@ -80,7 +75,7 @@ def master_agent(query: str, memory: dict):
                                   "ask_phone", memory)
 
     # ------------------------------------------------------------
-    # 4️⃣ KYC + INSTANT UNDERWRITING
+    # 4️⃣ KYC + FIRST UNDERWRITING CHECK
     # ------------------------------------------------------------
     if memory.get("kyc_status") is None and memory["stage"] == "verify_kyc":
 
@@ -100,88 +95,99 @@ def master_agent(query: str, memory: dict):
         memory["kyc_status"] = "verified"
         memory["customer_name"] = customer["name"]
 
-        # ⭐ INSTANT UNDERWRITING
+        # RUN UNDERWRITING HERE
         result = run_underwriting(memory)
 
-        # ---- APPROVED ----
         if result["status"] == "approved":
             memory["underwriting_status"] = "approved"
             memory["eligible_amount"] = memory["loan_amount"]
             memory["stage"] = "emi"
-            return build_response(f"Hi {memory['customer_name']}! ✅ Your loan is pre-approved. Calculating EMI…",
-                                  "auto_approved", memory)
+            return build_response(
+                f"Hi {memory['customer_name']}! ✅ Your loan is pre-approved. Calculating EMI…",
+                "auto_approved",
+                memory
+            )
 
-        # ---- NEED SALARY ----
         if result["status"] == "need_salary":
             memory["needs_salary_slip"] = True
             memory["stage"] = "ask_salary"
-            return build_response("To continue, please tell me your monthly salary.",
-                                  "ask_salary", memory)
+            return build_response(
+                "To continue, please tell me your monthly salary.",
+                "ask_salary",
+                memory
+            )
 
-        # ---- REJECTED ----
+        # REJECTED
         memory["stage"] = "end"
         return build_response(f"❌ Loan rejected: {result['reason']}",
                               "rejected", memory)
 
     # ------------------------------------------------------------
-    # 5️⃣ SALARY PARSING
+    # 5️⃣ SALARY INPUT
     # ------------------------------------------------------------
     if memory.get("needs_salary_slip") and memory.get("salary") is None:
+
         sal = salary.extract_salary(query)
-        if sal:
-            memory["salary"] = sal
-            memory["stage"] = "final_underwriting"
-        else:
+
+        if not sal:
             return build_response("Please enter your monthly salary (e.g., 45000 or 50k).",
                                   "ask_salary", memory)
 
-    # ------------------------------------------------------------
-    # 6️⃣ FINAL UNDERWRITING (AFTER SALARY)
-    # ------------------------------------------------------------
-    if memory.get("stage") == "final_underwriting" and memory.get("underwriting_status") is None:
+        # Save salary
+        memory["salary"] = sal
 
+        # ⭐ RUN UNDERWRITING AGAIN AFTER SALARY ⭐
         result = run_underwriting(memory)
 
         if result["status"] == "rejected":
             memory["stage"] = "end"
-            return build_response(f"❌ Loan rejected: {result['reason']}",
-                                  "rejected", memory)
+            return build_response(
+                f"❌ Loan rejected: {result['reason']}",
+                "rejected",
+                memory
+            )
 
+        # APPROVED AFTER SALARY
         memory["underwriting_status"] = "approved"
         memory["eligible_amount"] = memory["loan_amount"]
         memory["stage"] = "emi"
 
-        return build_response("✅ Loan approved! Calculating EMI…",
-                              "approved_after_salary", memory)
+        return build_response(
+            "✅ Loan approved after salary check! Calculating EMI…",
+            "approved_after_salary",
+            memory
+        )
 
     # ------------------------------------------------------------
-    # 7️⃣ EMI CALCULATION
+    # 6️⃣ EMI CALCULATION
     # ------------------------------------------------------------
     if memory.get("stage") == "emi" and memory.get("emi") is None:
 
-        emi_value, rate = emi_agent.calculate_emi(memory["loan_amount"], memory["tenure"])
+        emi_value, rate = emi_agent.calculate_emi(
+            memory["loan_amount"], memory["tenure"]
+        )
 
         memory["emi"] = emi_value
         memory["interest_rate"] = rate
         memory["stage"] = "sanction"
 
         return build_response(
-            text=f"📌 Your EMI is ₹{emi_value} at {rate}% interest.\nWould you like your sanction letter?",
-            type="emi_result",
-            memory=memory
+            f"📌 Your EMI is ₹{emi_value} at {rate}% interest.\nWould you like your sanction letter?",
+            "emi_result",
+            memory
         )
 
     # ------------------------------------------------------------
-    # 8️⃣ SANCTION LETTER
+    # 7️⃣ SANCTION LETTER
     # ------------------------------------------------------------
     if memory.get("stage") == "sanction":
         letter = sanction_agent.generate_sanction_letter(memory)
         memory["stage"] = "end"
 
         return build_response(
-            text="Here is your sanction letter!",
-            type="sanction_letter",
-            memory=memory,
+            "Here is your sanction letter!",
+            "sanction_letter",
+            memory,
             extra={
                 "letter_text": letter["letter_text"],
                 "pdf_url": f"/download/{memory['phone']}"
@@ -189,7 +195,10 @@ def master_agent(query: str, memory: dict):
         )
 
     # ------------------------------------------------------------
-    # 9️⃣ DEFAULT FALLBACK
+    # DEFAULT
     # ------------------------------------------------------------
-    return build_response("I can help with loan amount, tenure, KYC, eligibility or EMI. Continue!",
-                          "fallback", memory)
+    return build_response(
+        "I can help with loan amount, tenure, KYC, eligibility or EMI. Continue!",
+        "fallback",
+        memory
+    )

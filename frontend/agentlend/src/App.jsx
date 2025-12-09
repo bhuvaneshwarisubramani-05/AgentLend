@@ -1,13 +1,10 @@
-// frontend/agentlend/src/App.jsx
+import "./App.css";
 import Chat from "./components/Chat";
 
-function App() {
+export default function App() {
   return (
-    <div style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}>
-      <h1>Welcome to AgentLend!</h1>
+    <div className="app-wrapper">
       <Chat />
     </div>
   );
 }
-
-export default App;

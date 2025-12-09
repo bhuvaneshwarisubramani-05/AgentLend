@@ -1,113 +1,89 @@
-// frontend/agentlend/src/components/Chat.jsx
-import { useState } from "react";
-import axios from "axios";
+import React, { useState, useRef, useEffect } from "react";
+import "./chat.css";
+import { sendMessage } from "../services/api";
 
 export default function Chat() {
-  const [msg, setMsg] = useState("");
-  const [response, setResponse] = useState("");
-  const [salary, setSalary] = useState(55000);
-  const [creditScore, setCreditScore] = useState(720);
-  const [emi, setEmi] = useState(5000);
+  const [messages, setMessages] = useState([]);
+  const [memory, setMemory] = useState({});
+  const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
+  const scrollRef = useRef();
 
-  const sendMessage = async () => {
-    if (!msg.trim()) {
-      setResponse("Please type a message first!");
-      return;
-    }
+  const handleSend = async () => {
+    if (!text.trim()) return;
 
+    const userMsg = { sender: "user", text };
+    setMessages(prev => [...prev, userMsg]);
+    setText("");
     setLoading(true);
+
     try {
-      const res = await axios.post("http://127.0.0.1:8000/ask", {
-        message: msg,
-        salary,
-        credit_score: creditScore,
-        emi
-      });
-      setResponse(res.data.response);
+      const res = await sendMessage(userMsg.text, memory);
+
+      let botMsg = { sender: "bot", text: res.response.text };
+
+      // ⭐ ADD SANCTION LETTER BUTTON IF AVAILABLE
+      if (res.response.pdf_url) {
+        botMsg.pdf_url = res.response.pdf_url;
+      }
+
+      setMessages(prev => [...prev, botMsg]);
+      setMemory(res.memory);
+
     } catch (error) {
-      console.error(error);
-      setResponse("Error: Could not get a response from server.");
-    } finally {
-      setLoading(false);
-      setMsg(""); // clear message after sending
+      setMessages(prev => [
+        ...prev,
+        { sender: "bot", text: "⚠️ Server error, please try again." }
+      ]);
     }
+
+    setLoading(false);
   };
 
+  useEffect(() => {
+    scrollRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: "10px",
-        width: "350px",
-        padding: "20px",
-        border: "1px solid #ddd",
-        borderRadius: "8px",
-        fontFamily: "Arial, sans-serif",
-        boxShadow: "0 2px 5px rgba(0,0,0,0.1)"
-      }}
-    >
-      <h2>AgentLend Chat</h2>
+    <div className="chat-container">
 
-      {/* User Inputs */}
-      <input
-        type="number"
-        value={salary}
-        onChange={(e) => setSalary(Number(e.target.value))}
-        placeholder="Salary"
-      />
-      <input
-        type="number"
-        value={creditScore}
-        onChange={(e) => setCreditScore(Number(e.target.value))}
-        placeholder="Credit Score"
-      />
-      <input
-        type="number"
-        value={emi}
-        onChange={(e) => setEmi(Number(e.target.value))}
-        placeholder="EMI"
-      />
+      <div className="chat-box">
+        {messages.map((msg, i) => (
+          <div key={i} className={`bubble ${msg.sender === "user" ? "right" : "left"}`}>
 
-      {/* Message Input */}
-      <input
-        type="text"
-        value={msg}
-        onChange={(e) => setMsg(e.target.value)}
-        placeholder="Ask about your loan..."
-      />
+            {/* NORMAL CHAT TEXT */}
+            {msg.text}
 
-      {/* Send Button */}
-      <button
-        onClick={sendMessage}
-        disabled={loading}
-        style={{
-          padding: "8px 12px",
-          cursor: loading ? "not-allowed" : "pointer",
-          backgroundColor: "#4CAF50",
-          color: "white",
-          border: "none",
-          borderRadius: "4px"
-        }}
-      >
-        {loading ? "Sending..." : "Send"}
-      </button>
+            {/* ⭐ DOWNLOAD SANCTION LETTER BUTTON */}
+            {msg.pdf_url && (
+              <a
+                href={`http://127.0.0.1:8000${msg.pdf_url}`}
+                className="pdf-button"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                📄 Download Sanction Letter
+              </a>
+            )}
 
-      {/* Response */}
-      {response && (
-        <div
-          style={{
-            marginTop: "10px",
-            padding: "10px",
-            backgroundColor: "#f5f5f5",
-            borderRadius: "4px",
-            minHeight: "40px"
-          }}
-        >
-          {response}
-        </div>
-      )}
+          </div>
+        ))}
+
+        {loading && <div className="typing">AgentLend is typing...</div>}
+
+        <div ref={scrollRef}></div>
+      </div>
+
+      <div className="input-box">
+        <input
+          placeholder="Type your message..."
+          value={text}
+          onChange={e => setText(e.target.value)}
+          onKeyDown={e => e.key === "Enter" && handleSend()}
+        />
+        <button onClick={handleSend}>Send</button>
+      </div>
+
     </div>
   );
 }
