@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import "./chat.css";
 import { sendMessage } from "../services/api";
+import logo from "../assets/agentlend_logo.png";
 
 export default function Chat() {
   const [messages, setMessages] = useState([]);
@@ -13,7 +14,7 @@ export default function Chat() {
     if (!text.trim()) return;
 
     const userMsg = { sender: "user", text };
-    setMessages(prev => [...prev, userMsg]);
+    setMessages((prev) => [...prev, userMsg]);
     setText("");
     setLoading(true);
 
@@ -22,18 +23,14 @@ export default function Chat() {
 
       let botMsg = { sender: "bot", text: res.response.text };
 
-      // ⭐ ADD SANCTION LETTER BUTTON IF AVAILABLE
-      if (res.response.pdf_url) {
-        botMsg.pdf_url = res.response.pdf_url;
-      }
+      if (res.response.pdf_url) botMsg.pdf_url = res.response.pdf_url;
 
-      setMessages(prev => [...prev, botMsg]);
+      setMessages((prev) => [...prev, botMsg]);
       setMemory(res.memory);
-
-    } catch (error) {
-      setMessages(prev => [
+    } catch (err) {
+      setMessages((prev) => [
         ...prev,
-        { sender: "bot", text: "⚠️ Server error, please try again." }
+        { sender: "bot", text: "⚠️ Server error. Try again." },
       ]);
     }
 
@@ -41,36 +38,52 @@ export default function Chat() {
   };
 
   useEffect(() => {
+    // Scroll to the bottom whenever messages change
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   return (
     <div className="chat-container">
 
+      {/* HEADER WITH LOGO (Updated Design) */}
+      <div className="chat-header">
+        <img src={logo} className="logo" alt="AgentLend" />
+        <div className="header-text">
+          <h2>AGENTLEND</h2>
+          <p className="tagline">Your Smart AI Loan Assistant</p>
+        </div>
+      </div>
+
       <div className="chat-box">
         {messages.map((msg, i) => (
-          <div key={i} className={`bubble ${msg.sender === "user" ? "right" : "left"}`}>
+          <div key={i} className={`bubble ${msg.sender}`}>
 
-            {/* NORMAL CHAT TEXT */}
-            {msg.text}
-
-            {/* ⭐ DOWNLOAD SANCTION LETTER BUTTON */}
-            {msg.pdf_url && (
-              <a
-                href={`http://127.0.0.1:8000${msg.pdf_url}`}
-                className="pdf-button"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                📄 Download Sanction Letter
-              </a>
+            {/* Bot Avatar */}
+            {msg.sender === "bot" && (
+              <img className="avatar" src={logo} alt="bot" />
             )}
 
+            {/* Message Content Container (Required for stacking text and button) */}
+            <div className="message-content">
+              {/* Message Text */}
+              <div className="msg-text">{msg.text}</div>
+
+              {/* PDF Button */}
+              {msg.pdf_url && (
+                <a
+                  href={`http://127.0.0.1:8000${msg.pdf_url}`}
+                  className="pdf-button"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  📄 Download Sanction Letter
+                </a>
+              )}
+            </div>
           </div>
         ))}
 
         {loading && <div className="typing">AgentLend is typing...</div>}
-
         <div ref={scrollRef}></div>
       </div>
 
@@ -78,12 +91,11 @@ export default function Chat() {
         <input
           placeholder="Type your message..."
           value={text}
-          onChange={e => setText(e.target.value)}
-          onKeyDown={e => e.key === "Enter" && handleSend()}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleSend()}
         />
-        <button onClick={handleSend}>Send</button>
+        <button onClick={handleSend} disabled={loading}>Send</button>
       </div>
-
     </div>
   );
 }

@@ -1,108 +1,217 @@
-/* FULL SCREEN PAGE */
+/*===================================================================*/
+/* 1. MAIN PAGE LAYOUT */
+/*===================================================================*/
 .chat-container {
   height: 100vh;
   width: 100vw;
-  background: #0f0f12;
+  background: #0f0f12; /* Deep dark background */
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  padding: 0;
-  margin: 0;
   overflow: hidden;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Professional font */
 }
 
-/* CHAT AREA */
+/*===================================================================*/
+/* 2. HEADER - STYLISH AND PROMINENT (with Blue Glow) */
+/*===================================================================*/
+.chat-header {
+  display: flex;
+  align-items: center;
+  gap: 18px; /* Increased gap for better spacing */
+  padding: 20px 30px; /* Generous padding */
+  background: #1c1f24; /* Slightly lighter dark for the header */
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4); /* Stronger shadow for lift */
+  position: sticky; /* Keeps header visible on scroll */
+  top: 0;
+  z-index: 10;
+}
+
+.chat-header .logo {
+  width: 50px; /* Slightly larger logo */
+  height: 50px;
+  border-radius: 50%; /* Make the logo circular */
+  object-fit: cover;
+  box-shadow: 0 0 0 3px #4d7cfe; /* Blue ring border around logo (Brand Accent) */
+  flex-shrink: 0;
+}
+
+.header-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-header h2 {
+  color: #ffffff; /* White for maximum contrast and emphasis */
+  font-weight: 900; /* Extra bold */
+  font-size: 28px;
+  letter-spacing: 1.5px; /* Wider tracking */
+  margin: 0;
+  /* --- GLOWING BLUE EFFECT --- */
+  text-shadow: 0 0 10px #4d7cfe, 0 0 20px rgba(77, 124, 254, 0.5); 
+}
+
+.tagline {
+  color: #4d7cfe; /* Use the logo blue for the tagline to make it pop */
+  font-size: 16px;
+  font-weight: 500;
+  margin-top: 3px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+/*===================================================================*/
+/* 3. CHAT AREA & SCROLLBAR */
+/*===================================================================*/
 .chat-box {
   flex: 1;
+  padding: 25px 30px; /* Unified padding to match header */
   overflow-y: auto;
-  padding: 20px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 15px; /* Comfortable gap between bubbles */
 }
 
-/* MESSAGE BUBBLES */
+.chat-box::-webkit-scrollbar {
+  width: 8px;
+}
+.chat-box::-webkit-scrollbar-thumb {
+  background: #4d7cfe; /* Brand color scrollbar */
+  border-radius: 4px;
+}
+.chat-box::-webkit-scrollbar-track {
+  background: #1c1f24;
+}
+
+/*===================================================================*/
+/* 4. MESSAGE BUBBLES */
+/*===================================================================*/
 .bubble {
+  display: flex;
   max-width: 70%;
-  padding: 14px 18px;
-  border-radius: 14px;
-  font-size: 16px;
-  line-height: 1.4;
-  animation: fadeIn 0.2s ease-in-out;
+  gap: 10px;
+  animation: fadeIn 0.3s ease-out;
 }
 
-.bubble.left {
-  background: #25252b;
-  color: #eee;
+.msg-text {
+  line-height: 1.5;
+  font-size: 16px;
+}
+
+.message-content {
+    display: flex;
+    flex-direction: column; /* Allows message text and PDF button to stack */
+    gap: 10px; /* Space between message and button */
+}
+
+/* BOT BUBBLE */
+.bubble.bot {
   align-self: flex-start;
 }
 
-.bubble.right {
-  background: #caffbf;
-  color: #000;
+.bubble.bot .msg-text {
+  background: #1c1f24;
+  padding: 14px 18px;
+  border-radius: 0 18px 18px 18px; /* Smooth corners, sharp top-left */
+  color: #f0f0f0;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+/* USER BUBBLE */
+.bubble.user {
   align-self: flex-end;
 }
 
-/* INPUT BAR */
+.bubble.user .msg-text {
+  background: #4d7cfe; /* Logo blue primary color */
+  color: #fff;
+  padding: 14px 18px;
+  border-radius: 18px 0 18px 18px; /* Smooth corners, sharp top-right */
+  font-weight: 500;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+/* BOT AVATAR */
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid #4d7cfe; /* subtle border matching header ring */
+  flex-shrink: 0;
+}
+
+/* TYPING INDICATOR */
+.typing {
+  color: #a8b3e5;
+  padding: 10px 15px;
+  font-style: italic;
+}
+
+/*===================================================================*/
+/* 5. INPUT AREA */
+/*===================================================================*/
 .input-box {
-  width: 100%;
+  padding: 20px 30px; /* Unified padding to match header/chat-box */
+  background: #1c1f24;
+  border-top: 1px solid #282b30; /* Subtle dividing line */
   display: flex;
-  padding: 15px;
-  background: #18181c;
-  border-top: 1px solid #333;
+  gap: 15px;
 }
 
 .input-box input {
   flex: 1;
-  padding: 14px;
-  border-radius: 10px;
-  border: none;
-  outline: none;
-  background: #2c2c31;
+  padding: 14px 20px;
+  background: #0f0f12; /* Matches main chat background */
   color: white;
+  border-radius: 25px;
+  border: 1px solid #333;
+  outline: none;
   font-size: 16px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.input-box input:focus {
+    border-color: #4d7cfe;
+    box-shadow: 0 0 0 2px rgba(77, 124, 254, 0.5);
 }
 
 .input-box button {
-  margin-left: 10px;
-  padding: 14px 22px;
-  background: #6ab7ff;
+  padding: 14px 25px;
+  background: #4d7cfe;
   border: none;
-  border-radius: 10px;
+  border-radius: 25px;
   color: white;
+  font-weight: 700;
   cursor: pointer;
-  font-size: 16px;
-  transition: 0.2s;
+  transition: background 0.2s, transform 0.1s;
+  box-shadow: 0 4px 8px rgba(77, 124, 254, 0.3);
 }
 
 .input-box button:hover {
-  background: #4aa3ff;
+  background: #3c6cf0;
+  transform: translateY(-1px);
 }
 
-/* LOADING TEXT */
-.typing {
-  font-size: 14px;
-  color: #bbb;
-}
-
-/* PDF BUTTON */
+/*===================================================================*/
+/* 6. PDF BUTTON (Actionable Link) */
+/*===================================================================*/
 .pdf-button {
-  margin-top: 10px;
-  display: inline-block;
-  padding: 8px 14px;
-  background: #4da3ff;
-  border-radius: 6px;
+  background: #4d7cfe; /* Distinct color for actionable link (Success Green) */
+  padding: 10px 18px;
   color: white;
+  border-radius: 25px;
+  font-size: 15px;
   text-decoration: none;
-  font-size: 14px;
+  font-weight: 600;
+  display: inline-block;
+  transition: background 0.2s;
 }
 
 .pdf-button:hover {
-  background: #1d8bff;
+  background: #9e9fa7;
 }
 
-/* SMOOTH FADE */
+/* Keyframe for smooth message entry */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(5px); }
+  from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
